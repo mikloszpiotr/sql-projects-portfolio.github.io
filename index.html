@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piotr Mikłosz - SQL Analytics Portfolio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="hero">
+            <h1>SQL Analytics Portfolio</h1>
+            <p class="subtitle">Transforming Business Challenges into Data-Driven Solutions</p>
+            <p class="description">
+                Hi, I'm <strong>Piotr Mikłosz</strong> — I solve complex business problems using advanced SQL analytics. 
+                From supply chain optimization to procurement insights, I turn raw data into actionable business intelligence.
+            </p>
+            <div class="links">
+                <a href="https://www.linkedin.com/in/piotrmikłosz" target="_blank" class="btn-primary">LinkedIn</a>
+                <a href="https://mikloszpiotr.github.io" target="_blank" class="btn-secondary">ML Portfolio</a>
+            </div>
+        </header>
+
+        <section class="methodology">
+            <h2>My SQL Problem-Solving Framework</h2>
+            <div class="framework">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Business Problem</h3>
+                    <p>Identify operational pain points and KPI gaps</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>SQL Solution</h3>
+                    <p>Advanced analytics with window functions & CTEs</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Data Insights</h3>
+                    <p>Quantified findings with performance scorecards</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Business Decision</h3>
+                    <p>Actionable recommendations for operations</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="projects">
+            <h2>Featured SQL Projects</h2>
+            
+            <!-- Transportation Analysis Project -->
+            <div class="project-card">
+                <div class="project-header">
+                    <h3>🚚 Transportation Route Optimization</h3>
+                    <div class="project-tags">
+                        <span class="tag">Logistics</span>
+                        <span class="tag">Performance Analysis</span>
+                        <span class="tag">Window Functions</span>
+                    </div>
+                </div>
+                
+                <div class="business-problem">
+                    <h4>Business Problem</h4>
+                    <p>Logistics company experiencing <strong>rising delivery delays</strong>, SLA breaches, and inconsistent driver performance across regions, leading to customer dissatisfaction and operational inefficiencies.</p>
+                </div>
+
+                <div class="sql-solution">
+                    <h4>SQL Solution Logic</h4>
+                    <div class="code-block">
+                        <pre><code>-- Driver Performance with Rolling Trends
+WITH driver_weekly AS (
+  SELECT 
+    driver_id,
+    DATE_TRUNC('week', delivery_date) AS week,
+    ROUND(100.0 * COUNT(CASE WHEN delivery_time_min > sla_time_min 
+                         THEN 1 END) / COUNT(*), 2) AS delay_percent
+  FROM delivery_orders 
+  GROUP BY driver_id, DATE_TRUNC('week', delivery_date)
+),
+driver_trends AS (
+  SELECT *,
+    AVG(delay_percent) OVER (
+      PARTITION BY driver_id 
+      ORDER BY week 
+      ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+    ) AS rolling_3week_avg,
+    RANK() OVER (ORDER BY delay_percent DESC) AS delay_rank
+  FROM driver_weekly
+)
+SELECT * FROM driver_trends WHERE delay_percent > 25;</code></pre>
+                    </div>
+                </div>
+
+                <div class="insights">
+                    <h4>Key Insights</h4>
+                    <ul>
+                        <li><strong>33.1% delay rate</strong> for worst-performing driver on Route RTE05</li>
+                        <li><strong>57.2% vehicle delay rate</strong> for specific vehicles consistently involved in delays</li>
+                        <li><strong>Week-over-week trends</strong> identified drivers with deteriorating performance</li>
+                    </ul>
+                </div>
+
+                <div class="business-impact">
+                    <h4>Business Decisions</h4>
+                    <ul>
+                        <li>Reassign high-risk driver-route combinations</li>
+                        <li>Replace underperforming vehicles on critical routes</li>
+                        <li>Implement targeted coaching for drivers with >25% delay rates</li>
+                        <li>Dynamic route assignment based on historical performance data</li>
+                    </ul>
+                </div>
+
+                <a href="https://github.com/mikloszpiotr/transportation-sql-efficiency-analysis" target="_blank" class="project-link">View Full Analysis →</a>
+            </div>
+
+            <!-- Procurement Analysis Project -->
+            <div class="project-card">
+                <div class="project-header">
+                    <h3>📊 Procurement Supplier Performance</h3>
+                    <div class="project-tags">
+                        <span class="tag">Supply Chain</span>
+                        <span class="tag">Supplier Analysis</span>
+                        <span class="tag">Risk Assessment</span>
+                    </div>
+                </div>
+                
+                <div class="business-problem">
+                    <h4>Business Problem</h4>
+                    <p>Procurement team struggling with <strong>supplier reliability issues</strong>, inconsistent delivery performance, and lack of visibility into cost vs. quality trade-offs across vendor portfolio.</p>
+                </div>
+
+                <div class="sql-solution">
+                    <h4>SQL Solution Logic</h4>
+                    <div class="code-block">
+                        <pre><code>-- Supplier Risk Scorecard with Multi-Dimension Analysis
+WITH supplier_metrics AS (
+  SELECT 
+    supplier_id,
+    COUNT(*) as total_orders,
+    AVG(delivery_days) as avg_delivery_time,
+    STDDEV(delivery_days) as delivery_consistency,
+    AVG(quality_score) as avg_quality,
+    AVG(unit_cost) as avg_cost,
+    COUNT(CASE WHEN delivery_days > promised_days THEN 1 END) 
+      / COUNT(*)::FLOAT as late_delivery_rate
+  FROM procurement_orders 
+  GROUP BY supplier_id
+),
+risk_scoring AS (
+  SELECT *,
+    CASE 
+      WHEN late_delivery_rate > 0.2 AND avg_quality < 7 THEN 'HIGH_RISK'
+      WHEN late_delivery_rate > 0.1 OR avg_quality < 8 THEN 'MEDIUM_RISK'
+      ELSE 'LOW_RISK'
+    END as risk_category,
+    RANK() OVER (ORDER BY avg_cost ASC, avg_quality DESC) as value_rank
+  FROM supplier_metrics
+)
+SELECT * FROM risk_scoring ORDER BY risk_category, value_rank;</code></pre>
+                    </div>
+                </div>
+
+                <div class="insights">
+                    <h4>Key Insights</h4>
+                    <ul>
+                        <li><strong>23% of suppliers</strong> classified as high-risk with >20% late delivery rates</li>
+                        <li><strong>Cost-quality correlation</strong> revealed optimal supplier segments</li>
+                        <li><strong>Delivery consistency</strong> metrics identified unreliable partners</li>
+                    </ul>
+                </div>
+
+                <div class="business-impact">
+                    <h4>Business Decisions</h4>
+                    <ul>
+                        <li>Diversify away from high-risk suppliers</li>
+                        <li>Negotiate improved SLAs with medium-risk vendors</li>
+                        <li>Increase order volume with top-performing suppliers</li>
+                        <li>Implement supplier performance monitoring dashboard</li>
+                    </ul>
+                </div>
+
+                <a href="https://github.com/mikloszpiotr/procurement-sql-supplier-insights" target="_blank" class="project-link">View Full Analysis →</a>
+            </div>
+
+            <!-- Inventory Analysis Project -->
+            <div class="project-card">
+                <div class="project-header">
+                    <h3>📦 Inventory Backorder Prevention</h3>
+                    <div class="project-tags">
+                        <span class="tag">Inventory Management</span>
+                        <span class="tag">Stockout Analysis</span>
+                        <span class="tag">Demand Forecasting</span>
+                    </div>
+                </div>
+                
+                <div class="business-problem">
+                    <h4>Business Problem</h4>
+                    <p>Retail company facing <strong>frequent stockouts</strong> and backorders leading to lost sales, poor customer experience, and inefficient inventory allocation across product categories.</p>
+                </div>
+
+                <div class="sql-solution">
+                    <h4>SQL Solution Logic</h4>
+                    <div class="code-block">
+                        <pre><code>-- Stockout Risk Analysis with Seasonal Patterns
+WITH inventory_velocity AS (
+  SELECT 
+    product_id,
+    category,
+    DATE_TRUNC('month', order_date) as month,
+    SUM(quantity_ordered) as monthly_demand,
+    AVG(stock_level) as avg_stock,
+    COUNT(CASE WHEN stock_level = 0 THEN 1 END) as stockout_days,
+    LAG(SUM(quantity_ordered)) OVER (
+      PARTITION BY product_id 
+      ORDER BY DATE_TRUNC('month', order_date)
+    ) as prev_month_demand
+  FROM inventory_orders 
+  GROUP BY product_id, category, DATE_TRUNC('month', order_date)
+),
+risk_classification AS (
+  SELECT *,
+    CASE 
+      WHEN stockout_days > 5 AND monthly_demand > prev_month_demand * 1.2 
+        THEN 'CRITICAL'
+      WHEN stockout_days > 2 OR avg_stock < monthly_demand * 0.5 
+        THEN 'HIGH_RISK'
+      ELSE 'NORMAL'
+    END as stockout_risk,
+    monthly_demand / NULLIF(avg_stock, 0) as inventory_turnover
+  FROM inventory_velocity
+)
+SELECT category, stockout_risk, COUNT(*) as product_count,
+       AVG(inventory_turnover) as avg_turnover
+FROM risk_classification 
+GROUP BY category, stockout_risk
+ORDER BY category, stockout_risk;</code></pre>
+                    </div>
+                </div>
+
+                <div class="insights">
+                    <h4>Key Insights</h4>
+                    <ul>
+                        <li><strong>15% of products</strong> classified as critical risk with frequent stockouts</li>
+                        <li><strong>Seasonal demand patterns</strong> revealed optimal reorder points</li>
+                        <li><strong>Category-level analysis</strong> showed electronics had highest turnover</li>
+                    </ul>
+                </div>
+
+                <div class="business-impact">
+                    <h4>Business Decisions</h4>
+                    <ul>
+                        <li>Increase safety stock for critical-risk products</li>
+                        <li>Adjust reorder points based on seasonal demand patterns</li>
+                        <li>Implement automated alerts for low-stock situations</li>
+                        <li>Optimize warehouse allocation by category performance</li>
+                    </ul>
+                </div>
+
+                <a href="https://github.com/mikloszpiotr/sql-backorder-stockout-analysis" target="_blank" class="project-link">View Full Analysis →</a>
+            </div>
+        </section>
+
+        <section class="skills">
+            <h2>SQL Technical Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>Advanced Analytics</h3>
+                    <ul>
+                        <li>Window Functions (RANK, LAG, LEAD)</li>
+                        <li>Common Table Expressions (CTEs)</li>
+                        <li>Recursive Queries</li>
+                        <li>Rolling Calculations</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Business Intelligence</h3>
+                    <ul>
+                        <li>KPI Development & Tracking</li>
+                        <li>Performance Scorecards</li>
+                        <li>Trend Analysis</li>
+                        <li>Cohort Analysis</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Data Platforms</h3>
+                    <ul>
+                        <li>PostgreSQL</li>
+                        <li>MySQL</li>
+                        <li>BigQuery</li>
+                        <li>Snowflake</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer class="cta">
+            <h2>Ready to Solve Your Business Problems?</h2>
+            <p>Let's transform your data challenges into competitive advantages using advanced SQL analytics.</p>
+            <div class="cta-buttons">
+                <a href="https://www.linkedin.com/in/piotrmikłosz" target="_blank" class="btn-primary">Connect on LinkedIn</a>
+                <a href="https://mikloszpiotr.github.io" target="_blank" class="btn-secondary">Explore ML Portfolio</a>
+                <a href="https://github.com/mikloszpiotr" target="_blank" class="btn-secondary">View All Code Examples</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
